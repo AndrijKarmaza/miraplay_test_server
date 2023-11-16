@@ -25,10 +25,39 @@ const register = async (req, res) => {
     verificationToken,
   });
 
+  const emailMarkup = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Verification</title>
+    </head>
+    <body>
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <h1>Email Verification</h1>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <p>Дякуємо, що обрали наш сервіс. Для завершення реєстрації, будь ласка, підтвердіть свою адресу електронної пошти, натискуючи на посилання нижче:</p>
+                    <p><a href="${BASE_URL}/users/verify/${verificationToken}">Підтвердити електронну адресу</a></p>
+                </td>
+            </tr>
+            <tr>
+                <td align="center" style="padding-top: 20px;">
+                    <p>Якщо ви не реєструвалися на нашому сайті, проігноруйте цей лист.</p>
+                </td>
+            </tr>
+        </table>
+    </body>
+  </html>`;
+
   const verifyEmail = {
     to: email,
     subject: "Verify Email",
-    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click here to verify email</a>`,
+    html: emailMarkup,
   };
 
   await sendEmail(verifyEmail);
@@ -52,9 +81,31 @@ const verifyEmail = async (req, res) => {
     verificationToken: null,
   });
 
-  res.status(200).json({
-    message: "Verification successful",
-  });
+  const registerMessageMarcup = `<!DOCTYPE html>
+  <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Successful Registration</title>
+    </head>
+    <body>
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <h1>Успішна реєстрація</h1>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <p>Дякуємо за реєстрацію на нашому сайті. Ваш обліковий запис успішно створено.</p>
+                    <p>Тепер ви можете увійти на сайт, використовуючи свою адресу електронної пошти та пароль.</p>
+                </td>
+            </tr>
+        </table>
+    </body>
+  </html>`;
+
+  res.status(200).send(registerMessageMarcup);
 };
 
 const resendVerifyEmail = async (req, res) => {
@@ -100,7 +151,7 @@ const login = async (req, res) => {
     id: user._id,
   };
 
-  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "14d" });
   await User.findByIdAndUpdate(user._id, { token });
   res.status(200).json({ token });
 };

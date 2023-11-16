@@ -10,7 +10,6 @@ const {
   resendVerifyEmail,
 } = require("../controllers/auth");
 const authenticate = require("../middlewares/authenticate");
-const upload = require("../middlewares/upload");
 
 const router = express.Router();
 

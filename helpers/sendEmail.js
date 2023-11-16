@@ -15,7 +15,7 @@ const sendEmail = async (data) => {
   const email = { ...data, from: SENDER_MAIL };
   await transport
     .sendMail(email)
-    .then(() => console.log("Email send sucsess"))
+    .then(() => console.log(`Email send sucsess to ${data.to}`))
     .catch((err) => console.log(err.message));
   return true;
 };

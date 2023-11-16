@@ -5,12 +5,8 @@ const { User } = require("../models/users");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY, BASE_URL } = process.env;
-const gravatar = require("gravatar");
 const path = require("path");
-const fs = require("fs/promises");
 const { nanoid } = require("nanoid");
-
-const avatarDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res) => {
   const { email, password } = req.body;
@@ -21,20 +17,18 @@ const register = async (req, res) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
-  const avatarURL = gravatar.url(email);
   const verificationToken = nanoid();
 
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
-    avatarURL,
     verificationToken,
   });
 
   const verifyEmail = {
     to: email,
     subject: "Verify Email",
-    html: `<a target="_blank" href="${BASE_URL}/api/users/verify/${verificationToken}">Click verify email</a>`,
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click here to verify email</a>`,
   };
 
   await sendEmail(verifyEmail);
@@ -125,24 +119,11 @@ const logout = async (req, res) => {
   res.status(204).json({ message: "Logout sucsess" });
 };
 
-const updateAvatar = async (req, res) => {
-  const { _id } = req.user;
-  const { path: tempUpload, originalname } = req.file;
-  const fileName = `${_id}_${originalname}`;
-  const resultUpload = path.join(avatarDir, fileName);
-  await fs.rename(tempUpload, resultUpload);
-  const avatarURL = path.join("avatars", fileName);
-  await User.findByIdAndUpdate(_id, { avatarURL });
-
-  res.status(200).json({ avatarURL });
-};
-
 module.exports = {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
-  updateAvatar: ctrlWrapper(updateAvatar),
   verifyEmail: ctrlWrapper(verifyEmail),
   resendVerifyEmail: ctrlWrapper(resendVerifyEmail),
 };

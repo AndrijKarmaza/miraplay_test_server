@@ -8,7 +8,24 @@ const { SECRET_KEY, BASE_URL } = process.env;
 const path = require("path");
 const { nanoid } = require("nanoid");
 
-const emailMarkup = `<!DOCTYPE html>
+const register = async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    throw HttpError(409, "Email in use");
+  }
+
+  const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = nanoid();
+
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    verificationToken,
+  });
+
+  const emailMarkup = `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -36,23 +53,6 @@ const emailMarkup = `<!DOCTYPE html>
         </table>
     </body>
   </html>`;
-
-const register = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-
-  if (user) {
-    throw HttpError(409, "Email in use");
-  }
-
-  const hashPassword = await bcrypt.hash(password, 10);
-  const verificationToken = nanoid();
-
-  const newUser = await User.create({
-    ...req.body,
-    password: hashPassword,
-    verificationToken,
-  });
 
   const verifyEmail = {
     to: email,
@@ -117,6 +117,35 @@ const resendVerifyEmail = async (req, res) => {
   if (user.verify) {
     throw HttpError(400, "Verification has already been passed");
   }
+
+  const emailMarkup = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Verification</title>
+    </head>
+    <body>
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <h1>Email Verification</h1>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <p>Дякуємо, що обрали наш сервіс. Для завершення реєстрації, будь ласка, підтвердіть свою адресу електронної пошти, натискуючи на посилання нижче:</p>
+                    <p><a href="${BASE_URL}/users/verify/${user.verificationToken}">Підтвердити електронну адресу</a></p>
+                </td>
+            </tr>
+            <tr>
+                <td align="center" style="padding-top: 20px;">
+                    <p>Якщо ви не реєструвалися на нашому сайті, проігноруйте цей лист.</p>
+                </td>
+            </tr>
+        </table>
+    </body>
+  </html>`;
 
   const verifyEmail = {
     to: email,

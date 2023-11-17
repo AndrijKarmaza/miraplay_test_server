@@ -8,24 +8,7 @@ const { SECRET_KEY, BASE_URL } = process.env;
 const path = require("path");
 const { nanoid } = require("nanoid");
 
-const register = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-
-  if (user) {
-    throw HttpError(409, "Email in use");
-  }
-
-  const hashPassword = await bcrypt.hash(password, 10);
-  const verificationToken = nanoid();
-
-  const newUser = await User.create({
-    ...req.body,
-    password: hashPassword,
-    verificationToken,
-  });
-
-  const emailMarkup = `<!DOCTYPE html>
+const emailMarkup = `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -53,6 +36,23 @@ const register = async (req, res) => {
         </table>
     </body>
   </html>`;
+
+const register = async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    throw HttpError(409, "Email in use");
+  }
+
+  const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = nanoid();
+
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    verificationToken,
+  });
 
   const verifyEmail = {
     to: email,
@@ -121,7 +121,7 @@ const resendVerifyEmail = async (req, res) => {
   const verifyEmail = {
     to: email,
     subject: "Verify Email",
-    html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${user.verificationToken}">Click verify email</a>`,
+    html: emailMarkup,
   };
 
   await sendEmail(verifyEmail);
@@ -151,9 +151,11 @@ const login = async (req, res) => {
     id: user._id,
   };
 
+  const { name } = user;
+
   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "14d" });
   await User.findByIdAndUpdate(user._id, { token });
-  res.status(200).json({ token });
+  res.status(200).json({ user: { name, email }, token });
 };
 
 const getCurrent = async (req, res) => {

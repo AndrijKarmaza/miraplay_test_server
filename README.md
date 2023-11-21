@@ -12,7 +12,7 @@ Features:
 
 ## Endpoints
 
-**Base URL :** https://user-reg-backend.onrender.com</span>
+**Base URL :** https://user-reg-backend.onrender.com/users
 
 * **POST** /register
 
